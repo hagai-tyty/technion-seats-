@@ -1,0 +1,5 @@
+# Keep private Chrome extension local-only (never pushed to public repo)
+extension/
+*.zip
+.DS_Store
+Thumbs.db
