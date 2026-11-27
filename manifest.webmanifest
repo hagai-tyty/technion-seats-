@@ -1,0 +1,28 @@
+{
+  "name": "Seat Radar Live — מקומות פנויים בטכניון",
+  "short_name": "Seat Radar",
+  "description": "מצא מקום פנוי בקורסים בטכניון בזמן אמת — מל״גים פתוחים, ספורט פתוח, תפוסה, שעות וחדרים.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0c0a",
+  "theme_color": "#0b0c0a",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
