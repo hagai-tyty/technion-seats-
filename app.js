@@ -18,6 +18,7 @@ let snapshotData = null;
 let catalogMap = new Map(); // courseId -> { general, schedule } from sap.cheesefork.cf
 let currentPreset = 'all';
 let currentView = localStorage.getItem(VIEW_STORAGE_KEY) || 'table';
+let splitGroupsMode = false;
 let visibleLimit = PAGE_SIZE;
 let pinnedSet = new Set(loadPinned());
 let toastTimer = null;
@@ -35,6 +36,7 @@ const creditsFilter = document.getElementById('creditsFilter');
 const minSeatsFilter = document.getElementById('minSeatsFilter');
 const sortSelect = document.getElementById('sortSelect');
 const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+const splitGroupsBtn = document.getElementById('splitGroupsBtn');
 const filterToolbar = document.getElementById('filterToolbar');
 const mobileFilterToggle = document.getElementById('mobileFilterToggle');
 const activeFilterCount = document.getElementById('activeFilterCount');
@@ -667,15 +669,36 @@ function sanitizeCourses(courses) {
   return cleaned;
 }
 
+function getGroupSubName(course, g) {
+  let rawName = (g.groupName || '').trim();
+  rawName = rawName.replace(/^(?:קב'?\s*|SE)\d+\s*[-–•]?\s*/i, '').trim();
+  if (rawName && rawName !== course.name) return rawName;
+  return '';
+}
+
 function getGroupDisplayLabel(course, g) {
   const base = g.groupShort || `קבוצה ${g.seObjid}`;
-  let rawName = (g.groupName || '').trim();
-  // Strip redundant leading "קב054" / "קב' 054" / "SE054" prefix if followed by descriptive text
-  rawName = rawName.replace(/^(?:קב'?\s*|SE)\d+\s*[-–•]?\s*/i, '').trim();
-  if (rawName && rawName !== course.name) {
-    return `${base} • ${rawName}`;
+  const sub = getGroupSubName(course, g);
+  return sub ? `${base} • ${sub}` : base;
+}
+
+function getGroupCompactScheduleText(courseId, g) {
+  const sessions = getGroupSessions(courseId, g);
+  if (!sessions.length) return '';
+  const seen = new Set();
+  const parts = [];
+  for (const s of sessions) {
+    const day = (s['יום'] || '').trim();
+    const time = (s['שעה'] || '').trim();
+    const loc = formatLocation(s);
+    if (!day && !time && !loc) continue;
+    const text = [day ? `יום ${day}` : '', time, loc].filter(Boolean).join(' • ');
+    if (seen.has(text)) continue;
+    seen.add(text);
+    parts.push(text);
+    if (parts.length >= 2) break;
   }
-  return base;
+  return parts.join(' | ');
 }
 
 function formatLocation(s) {
@@ -917,7 +940,23 @@ function filterAndSortCourses() {
     const { groups: matchedGroups } = getMatchingGroupsForCourse(c);
     if (matchedGroups.length === 0) continue;
 
-    filtered.push({ ...c, groups: matchedGroups, _allGroupCount: c.groups.length });
+    if (splitGroupsMode) {
+      for (const g of matchedGroups) {
+        const subName = getGroupSubName(c, g);
+        filtered.push({
+          ...c,
+          groups: [g],
+          _allGroupCount: c.groups.length,
+          _splitGroup: g,
+          _displayTitle: subName || c.name || c.id,
+          _displaySub: subName
+            ? `${c.name} • ${g.groupShort || ''}`
+            : `${c.faculty || ''} • ${g.groupShort || ''}`
+        });
+      }
+    } else {
+      filtered.push({ ...c, groups: matchedGroups, _allGroupCount: c.groups.length });
+    }
   }
 
   filtered.sort((a, b) => {
@@ -1015,7 +1054,7 @@ function renderCards(courses) {
       else if (isSport(c)) categoryBadge = '<span class="tag-badge tag-sport">ספורט</span>';
 
       return `
-        <article class="course-card" data-course-id="${escapeHtml(c.id)}" data-open-modal="${escapeHtml(c.id)}" style="animation-delay:${Math.min(idx * 18, 180)}ms">
+        <article class="course-card" data-course-id="${escapeHtml(c.id)}" data-open-modal="${escapeHtml(c.id)}"${c._splitGroup ? ` data-focus-se="${escapeHtml(c._splitGroup.seObjid)}"` : ''} style="animation-delay:${Math.min(idx * 18, 180)}ms">
           <div class="course-top">
             <div class="course-id-cluster">
               <button class="course-id-btn" data-copy-id="${escapeHtml(c.id)}" title="העתק מספר קורס">
@@ -1042,9 +1081,9 @@ function renderCards(courses) {
           </div>
 
           <div>
-            <h2 class="course-title">${escapeHtml(c.name || c.id)}</h2>
+            <h2 class="course-title">${escapeHtml(c._displayTitle || c.name || c.id)}</h2>
             <div class="course-sub">
-              <span>${escapeHtml(c.faculty || 'ללא פקולטה')}</span>
+              <span>${escapeHtml(c._splitGroup ? (c._displaySub || c.faculty || '') : (c.faculty || 'ללא פקולטה'))}</span>
               ${c.credits ? `<span class="sep">•</span><span class="mono">${escapeHtml(c.credits)} נק״ז</span>` : ''}
             </div>
           </div>
@@ -1086,13 +1125,19 @@ function renderTable(courses) {
       const isPinned = pinnedSet.has(c.id);
 
       const totalGroupsCount = c._allGroupCount ?? c.groups.length;
-      const mobileSubMeta = `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''} • ${m.openGroups}/${totalGroupsCount} קב׳`;
+      const sg = c._splitGroup || null;
+      const splitSched = sg ? getGroupCompactScheduleText(c.id, sg) : '';
+      const rowTitle = c._displayTitle || c.name || c.id;
+      const rowSub = sg ? (c._displaySub || c.faculty || '') : (c.faculty || '');
+      const mobileSubMeta = sg
+        ? `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''}${splitSched ? ` • ${escapeHtml(splitSched)}` : ''}`
+        : `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''} • ${m.openGroups}/${totalGroupsCount} קב׳`;
       let categoryBadge = '';
       if (isMalag(c)) categoryBadge = '<span class="tag-badge tag-malag">מל״ג</span>';
       else if (isSport(c)) categoryBadge = '<span class="tag-badge tag-sport">ספורט</span>';
 
       return `
-        <tr data-open-modal="${escapeHtml(c.id)}">
+        <tr data-open-modal="${escapeHtml(c.id)}"${sg ? ` data-focus-se="${escapeHtml(sg.seObjid)}"` : ''}>
           <td class="col-pin">
             <button class="pin-btn ${isPinned ? 'pinned' : ''}" data-pin-id="${escapeHtml(c.id)}" title="מעקב">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="${isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
@@ -1103,14 +1148,15 @@ function renderTable(courses) {
           <td class="col-id mono">${escapeHtml(c.id)}</td>
           <td class="col-course">
             <div class="table-title-row">
-              <strong>${escapeHtml(c.name || c.id)}</strong>
+              <strong>${escapeHtml(rowTitle)}</strong>
               ${categoryBadge}
             </div>
-            <div class="table-faculty">${escapeHtml(c.faculty || '')}</div>
+            <div class="table-faculty">${escapeHtml(rowSub)}</div>
+            ${splitSched ? `<div class="table-sched-sub mono">${escapeHtml(splitSched)}</div>` : ''}
             <div class="mobile-inline-meta mono">${mobileSubMeta}</div>
           </td>
           <td class="col-credits mono">${escapeHtml(c.credits || '—')}</td>
-          <td class="col-groups mono">${m.openGroups} / ${totalGroupsCount}</td>
+          <td class="col-groups mono">${sg ? escapeHtml(sg.groupShort || sg.seObjid) : `${m.openGroups} / ${totalGroupsCount}`}</td>
           <td class="col-bar table-bar-cell">
             <div class="meter-track"><div class="meter-fill ${cls}" style="width:${pct}%"></div></div>
             <div class="mono" style="font-size:0.72rem;color:var(--text-muted);margin-top:3px">${m.totalBooked}${m.finiteCapacity > 0 ? '/' + m.finiteCapacity : ''}</div>
@@ -1138,7 +1184,7 @@ function renderTable(courses) {
             <th class="col-id">מספר</th>
             <th class="col-course">קורס</th>
             <th class="col-credits">נק״ז</th>
-            <th class="col-groups">קבוצות פתוחות</th>
+            <th class="col-groups">${splitGroupsMode ? 'קבוצה' : 'קבוצות פתוחות'}</th>
             <th class="col-bar">תפוסה</th>
             <th class="col-seats">פנויים</th>
             <th class="col-waitlist">המתנה</th>
@@ -1161,7 +1207,9 @@ function render(resetLimit = false) {
   resetFiltersBtn.classList.toggle('hidden', !hasActiveFilters());
 
   const filtered = filterAndSortCourses();
-  statsBar.textContent = `מציג ${filtered.length.toLocaleString('he-IL')} מתוך ${snapshotData.courses.length.toLocaleString('he-IL')} קורסים`;
+  statsBar.textContent = splitGroupsMode
+    ? `מציג ${filtered.length.toLocaleString('he-IL')} קבוצות רישום (מתוך ${snapshotData.courses.length.toLocaleString('he-IL')} קורסים)`
+    : `מציג ${filtered.length.toLocaleString('he-IL')} מתוך ${snapshotData.courses.length.toLocaleString('he-IL')} קורסים`;
 
   if (filtered.length === 0) {
     coursesContainer.className = 'courses-grid';
@@ -1180,14 +1228,17 @@ function render(resetLimit = false) {
 
 // ======================== Course Detail Modal ========================
 
-function openCourseModal(courseId, showAllGroups = false) {
+function openCourseModal(courseId, showAllGroups = false, focusSeObjid = null) {
   const course = snapshotData?.courses.find((c) => c.id === courseId);
   if (!course) return;
 
   const { groups: matchedGroups, isGroupFiltered } = getMatchingGroupsForCourse(course);
-  const groupsToShow = (!showAllGroups && isGroupFiltered && matchedGroups.length > 0)
-    ? matchedGroups
-    : course.groups;
+  let groupsToShow = (!showAllGroups && isGroupFiltered && matchedGroups.length > 0)
+    ? [...matchedGroups]
+    : [...course.groups];
+  if (focusSeObjid) {
+    groupsToShow.sort((a, b) => (a.seObjid === focusSeObjid ? -1 : b.seObjid === focusSeObjid ? 1 : 0));
+  }
   const hiddenOthers = course.groups.length - groupsToShow.length;
 
   const badges = [`<span class="tag-badge mono">${escapeHtml(course.id)}</span>`];
@@ -1233,7 +1284,7 @@ function openCourseModal(courseId, showAllGroups = false) {
       const label = getGroupDisplayLabel(course, g);
       const sessions = getGroupSessions(course.id, g);
       return `
-        <div class="group-tile">
+        <div class="group-tile${focusSeObjid && g.seObjid === focusSeObjid ? ' focused-group' : ''}">
           <div class="group-row-head">
             <span class="group-label">${escapeHtml(label)} <span class="mono" style="color:var(--text-muted);font-size:0.75rem">(${escapeHtml(g.seObjid)})</span></span>
             <span class="seat-badge ${info.cls}">${info.badge}</span>
@@ -1335,7 +1386,11 @@ document.addEventListener('click', async (e) => {
 
   const modalTrigger = e.target.closest('[data-open-modal]');
   if (modalTrigger) {
-    openCourseModal(modalTrigger.getAttribute('data-open-modal'));
+    openCourseModal(
+      modalTrigger.getAttribute('data-open-modal'),
+      false,
+      modalTrigger.getAttribute('data-focus-se') || null
+    );
   }
 });
 
@@ -1374,6 +1429,14 @@ document.querySelectorAll('.view-btn').forEach((btn) => {
     document.querySelectorAll('.view-btn').forEach((b) => b.classList.toggle('active', b === btn));
     render(false);
   });
+});
+
+splitGroupsBtn.addEventListener('click', () => {
+  splitGroupsMode = !splitGroupsMode;
+  splitGroupsBtn.classList.toggle('active', splitGroupsMode);
+  splitGroupsBtn.setAttribute('aria-pressed', String(splitGroupsMode));
+  showToast(splitGroupsMode ? 'מצב מופרד: כל קבוצה וענף ספורט מוצגים בנפרד' : 'מצב רגיל: קבוצות מקובצות לפי קורס');
+  render(true);
 });
 
 mobileFilterToggle.addEventListener('click', () => {

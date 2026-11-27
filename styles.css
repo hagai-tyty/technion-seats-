@@ -697,6 +697,42 @@ body {
   opacity: 0.85;
 }
 
+.split-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.split-toggle-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: var(--bg-card-hover);
+}
+
+.split-toggle-btn.active {
+  background: var(--signal-open-dim);
+  color: var(--signal-open-text);
+  border-color: color-mix(in srgb, var(--signal-open) 45%, transparent);
+}
+
+.table-sched-sub {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
 .view-switcher {
   display: inline-flex;
   background: var(--bg-inset);
@@ -954,6 +990,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+
+.group-tile.focused-group {
+  border-color: var(--signal-open);
+  box-shadow: 0 0 0 2px var(--signal-open-dim);
 }
 
 .group-row-head {
@@ -2056,6 +2097,17 @@ body {
     white-space: nowrap;
   }
 
+  .split-toggle-btn {
+    height: 38px;
+    padding: 0 9px;
+    font-size: 0.76rem;
+    gap: 5px;
+  }
+
+  .split-toggle-btn span {
+    display: inline;
+  }
+
   /* Fix: force full-width next row inside flex container (override desktop flex: 1) */
   .filter-toolbar .filter-group {
     flex: 0 0 100%;
@@ -2183,6 +2235,11 @@ body {
   .filter-toolbar.filters-open .filter-group {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .split-toggle-btn {
+    padding: 0 8px;
+    font-size: 0.73rem;
   }
 }
 
