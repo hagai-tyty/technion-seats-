@@ -1130,7 +1130,7 @@ function renderTable(courses) {
       const rowTitle = c._displayTitle || c.name || c.id;
       const rowSub = sg ? (c._displaySub || c.faculty || '') : (c.faculty || '');
       const mobileSubMeta = sg
-        ? `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''}${splitSched ? ` • ${escapeHtml(splitSched)}` : ''}`
+        ? `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''}`
         : `${escapeHtml(c.id)}${c.credits ? ` • ${escapeHtml(c.credits)} נק״ז` : ''} • ${m.openGroups}/${totalGroupsCount} קב׳`;
       let categoryBadge = '';
       if (isMalag(c)) categoryBadge = '<span class="tag-badge tag-malag">מל״ג</span>';
