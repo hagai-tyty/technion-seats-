@@ -45,11 +45,13 @@
   <meta name="twitter:description" content="Seat Radar (seatradar.live) — מצא מקום פנוי בקורסים בטכניון: מל״גים פתוחים, ספורט פתוח, תפוסה, שעות וחדרים." />
   <meta name="twitter:image" content="https://seatradar.live/og-image.png" />
 
-  <!-- Icons & PWA Manifest (PNG + SVG for Google Search & Mobile Home Screen) -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <!-- Icons & PWA Manifest (ICO + 48px/192px PNG + SVG for Google Search & Mobile Home Screen) -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
 
   <!-- Structured Data (JSON-LD) for Google Rich Results -->
   <script type="application/ld+json">
@@ -64,6 +66,22 @@
         "url": "https://seatradar.live/",
         "inLanguage": ["he", "en"],
         "description": "Seat Radar — מצא מקום פנוי בקורסים בטכניון: מל״גים פתוחים, קורסי ספורט פתוחים, תפוסה, שעות, חדרים ורשימות המתנה ממערכת הרישום של הטכניון.",
+        "image": {
+          "@type": "ImageObject",
+          "url": "https://seatradar.live/og-image.png",
+          "width": 1200,
+          "height": 630
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Seat Radar",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://seatradar.live/icon-192.png",
+            "width": 192,
+            "height": 192
+          }
+        },
         "creator": {
           "@type": "Person",
           "name": "Hagai Aviv",
@@ -71,11 +89,28 @@
         }
       },
       {
+        "@type": "WebPage",
+        "@id": "https://seatradar.live/#webpage",
+        "url": "https://seatradar.live/",
+        "name": "Seat Radar — מקומות פנויים בקורסים בטכניון | Technion",
+        "isPartOf": { "@id": "https://seatradar.live/#website" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://seatradar.live/og-image.png",
+          "width": 1200,
+          "height": 630
+        },
+        "thumbnailUrl": "https://seatradar.live/og-image.png",
+        "inLanguage": "he"
+      },
+      {
         "@type": "WebApplication",
         "@id": "https://seatradar.live/#app",
         "name": "Seat Radar — Technion Course Seats",
         "alternateName": ["Seat Radar Live", "SEATRADAR"],
         "url": "https://seatradar.live/",
+        "image": "https://seatradar.live/og-image.png",
+        "screenshot": "https://seatradar.live/og-image.png",
         "applicationCategory": "EducationalApplication",
         "operatingSystem": "All",
         "isAccessibleForFree": true,
@@ -141,7 +176,7 @@
   <div class="bg-noise" aria-hidden="true"></div>
 
   <!-- Top Navigation & Live Telemetry Bar -->
-  <header class="topbar">
+  <header class="topbar" data-nosnippet>
     <div class="container topbar-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
@@ -200,7 +235,7 @@
       </div>
 
       <!-- KPI Strip -->
-      <div class="kpi-strip" id="kpiStrip">
+      <div class="kpi-strip" id="kpiStrip" data-nosnippet>
         <button class="kpi-card" data-kpi-action="all">
           <span class="kpi-label">קורסים בסמסטר</span>
           <span class="kpi-value mono" id="kpiCourses">—</span>
@@ -247,7 +282,7 @@
       </div>
 
       <!-- Smart Preset Chips -->
-      <div class="presets-row" id="presetsRow" role="tablist" aria-label="מסננים מהירים">
+      <div class="presets-row" id="presetsRow" role="tablist" aria-label="מסננים מהירים" data-nosnippet>
         <button class="preset-chip active" data-preset="all">
           <span>הכל</span>
         </button>
@@ -274,7 +309,7 @@
     </section>
 
     <!-- Precision Filter Toolbar -->
-    <section class="filter-toolbar" id="filterToolbar">
+    <section class="filter-toolbar" id="filterToolbar" data-nosnippet>
       <div class="mobile-filter-bar">
         <button type="button" class="mobile-filter-toggle" id="mobileFilterToggle" aria-expanded="false">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -382,7 +417,7 @@
     </section>
 
     <!-- Results Meta & Active Filters -->
-    <div class="results-bar">
+    <div class="results-bar" data-nosnippet>
       <div class="results-count" id="statsBar">טוען קורסים...</div>
       <div class="semester-wrap">
         <select id="semesterSelect" class="semester-select mono hidden" aria-label="בחירת סמסטר"></select>
@@ -452,7 +487,7 @@
   <!-- Toast Notification -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <footer class="footer">
+  <footer class="footer" data-nosnippet>
     <div class="container footer-inner">
       <span>© חגי אביב • Seat Radar (<a href="https://seatradar.live/" class="footer-link mono">seatradar.live</a>) // נתוני רישום SAP טכניון</span>
       <span class="mono">קיצור מקלדת: / לחיפוש • ESC לסגירה</span>
